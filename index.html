@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perpustakaan SMKN 1 Gedong Tataan</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: #333;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      color: white;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    form {
+      display: grid;
+      gap: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #4facfe;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #007bff;
+    }
+
+    .btn-edit {
+      background: orange;
+    }
+
+    .btn-delete {
+      background: red;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    img {
+      width: 50px;
+      border-radius: 5px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      th {
+        display: none;
+      }
+
+      td {
+        margin-bottom: 10px;
+        background: #f9f9f9;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>📚 Perpustakaan SMKN 1 Gedong Tataan</h1>
+</header>
+
+<div class="container">
+
+  <!-- Form -->
+  <div class="card">
+    <h2>Tambah / Edit Buku</h2>
+    <form id="bookForm">
+      <input type="text" id="judul" placeholder="Judul Buku" required>
+      <input type="text" id="penerbit" placeholder="Penerbit" required>
+      <input type="number" id="tahun" placeholder="Tahun" required>
+      <input type="number" id="stok" placeholder="Stok" required>
+      <input type="file" id="sampul" accept="image/*">
+      <button type="submit">Simpan</button>
+    </form>
+  </div>
+
+  <!-- Tabel -->
+  <div class="card">
+    <h2>Daftar Buku</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Sampul</th>
+          <th>Judul</th>
+          <th>Penerbit</th>
+          <th>Tahun</th>
+          <th>Stok</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="bookList"></tbody>
+    </table>
+  </div>
+
+  <!-- Laporan -->
+  <div class="card">
+    <h2>Laporan</h2>
+    <p>Total Buku: <span id="totalBuku">0</span></p>
+    <p>Total Stok: <span id="totalStok">0</span></p>
+  </div>
+
+</div>
+
+<script>
+  const form = document.getElementById("bookForm");
+  const bookList = document.getElementById("bookList");
+
+  let books = [];
+  let editIndex = -1;
+
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const judul = document.getElementById("judul").value;
+    const penerbit = document.getElementById("penerbit").value;
+    const tahun = document.getElementById("tahun").value;
+    const stok = document.getElementById("stok").value;
+    const sampulFile = document.getElementById("sampul").files[0];
+
+    const reader = new FileReader();
+
+    reader.onload = function() {
+      const sampul = reader.result;
+
+      const book = { judul, penerbit, tahun, stok, sampul };
+
+      if (editIndex === -1) {
+        books.push(book);
+      } else {
+        books[editIndex] = book;
+        editIndex = -1;
+      }
+
+      renderBooks();
+      form.reset();
+    };
+
+    if (sampulFile) {
+      reader.readAsDataURL(sampulFile);
+    } else {
+      const sampul = editIndex !== -1 ? books[editIndex].sampul : "";
+      const book = { judul, penerbit, tahun, stok, sampul };
+
+      if (editIndex === -1) {
+        books.push(book);
+      } else {
+        books[editIndex] = book;
+        editIndex = -1;
+      }
+
+      renderBooks();
+      form.reset();
+    }
+  });
+
+  function renderBooks() {
+    bookList.innerHTML = "";
+    let totalStok = 0;
+
+    books.forEach((book, index) => {
+      totalStok += parseInt(book.stok);
+
+      const row = `
+        <tr>
+          <td>${book.sampul ? `<img src="${book.sampul}">` : '-'}</td>
+          <td>${book.judul}</td>
+          <td>${book.penerbit}</td>
+          <td>${book.tahun}</td>
+          <td>${book.stok}</td>
+          <td>
+            <button class="btn-edit" onclick="editBook(${index})">Edit</button>
+            <button class="btn-delete" onclick="deleteBook(${index})">Hapus</button>
+          </td>
+        </tr>
+      `;
+
+      bookList.innerHTML += row;
+    });
+
+    document.getElementById("totalBuku").innerText = books.length;
+    document.getElementById("totalStok").innerText = totalStok;
+  }
+
+  function deleteBook(index) {
+    if (confirm("Yakin ingin menghapus buku ini?")) {
+      books.splice(index, 1);
+      renderBooks();
+    }
+  }
+
+  function editBook(index) {
+    const book = books[index];
+
+    document.getElementById("judul").value = book.judul;
+    document.getElementById("penerbit").value = book.penerbit;
+    document.getElementById("tahun").value = book.tahun;
+    document.getElementById("stok").value = book.stok;
+
+    editIndex = index;
+  }
+</script>
+
+</body>
+</html>
